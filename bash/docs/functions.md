@@ -52,8 +52,72 @@ For this to work, the functions must be read after the configuration file.
     || $VAR[url]=https://dev/url
 ```
 
-## Nice to have
+## Guidelines for functions
+``` bash
+test_function() {
 
-> - [ ] passing associative arrays to Functions
-> - [ ] structured returns. Maybe returning something that can be easily used as an associative array? To include array{text}, array{message}, array{return_code}
-> - [ ] create a structure heading for the functions. Like explain the options and what is required if passing an associative array. Explain posible return codes and message strings. Also explain what the function does.
+# Description:  This function takes two values.
+#               The default behavior is to add the values
+#               and return if the result is even or odd.
+
+# Options:
+#               -m      multiply values instead
+#               -s      substract second value from the first
+
+# Arguments:
+#               value1    The first value to use. required
+#               value2    The second value to use. required
+
+# Returns:      0 on pass, 1 on fail
+#               or returns string
+#               If returns string, prefix with "FAILURE:" if fails.
+#               Else return useable string.
+
+}
+```
+
+## Passing array references to a function
+Array references can be passed to a bash function (``Bash 4.3+``).
+This makes it easy to pass a lot of information to a function.
+> Warning: The function can modify the contents of the array unless it is marked read-only before calling the function.
+
+``` bash
+declare -A ta=([one]=a [two]=b [three]=c) # Declare and associative array
+
+aref() {
+    local -n aray=$1      # Make $aray a pointer to the array passed to it.
+
+    echo ${aray[three]}
+    echo ${aray[two]}
+    echo ${aray[one]}
+}
+
+readonly ta               # Mark the ta array readonly so the function cannot modify it.
+aref ta
+```
+
+## Returns
+By default, bash functions return the exit status of the last command executed in them.
+This feature can be used to allow bash functions to return bot a return code and a return string.
+
+The following function will take two arguments and return them. The first will be a return code and the second is a string.
+If called as the last command executed in a function, the calling function will return a return code (``$?``) and a return string.
+
+``` bash
+rc() {
+  # Descriptions: This function is used to return a string and also a value from other functions.
+  #    Call the function at then end of any other functions.
+  #    It takes two arguments:
+  #        The first argument is a return code for the function to return.
+  #        The second argument is an optional string to echo to STDOUT.
+  #    If the first argument is not specified, the function will return a code of 2.              
+
+  local rc=$1 # return code
+  local rs=$2 # return string
+
+  : ${rc:=2}  # Set rc to 2 if unspecified.
+
+  echo $rs
+  return $rc
+}
+```
